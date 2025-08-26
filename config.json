@@ -1,0 +1,10 @@
+{
+  "udp_host": "127.0.0.1",
+  "udp_port": 5005,
+  "telemetry_rate_ms": 500,
+  "battery_start_mv": 4200,
+  "battery_drain_mv_per_sec": 0.05,
+  "temp_base_c": 25.0,
+  "pressure_base_pa": 101325
+}
+
