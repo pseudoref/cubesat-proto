@@ -17,8 +17,8 @@ class CsvLogger:
     def __init__(self, log_dir: str):
         os.makedirs(log_dir, exist_ok=True)
         ts = int(time.time())
-        path = os.path.join(log_dir, f"telemetry_{ts}.csv")
-        self._f = open(path, "w", newline="")
+        self.path = os.path.join(log_dir, f"telemetry_{ts}.csv")  # set path first
+        self._f = open(self.path, "w", newline="")
         self._w = csv.DictWriter(self._f, fieldnames=[
             "timestamp",      # local ground timestamp
             "version",
@@ -41,7 +41,7 @@ class CsvLogger:
             "raw_len",
         ])
         self._w.writeheader()
-        _update_symlink(self.path, os.path.join(log_dir, "latest.csv")
+        _update_symlink(self.path, os.path.join(log_dir, "latest.csv"))
 
     def write(self, row: dict):
         row = dict(row)  # shallow copy
@@ -57,9 +57,9 @@ class JsonlLogger:
     def __init__(self, log_dir: str):
         os.makedirs(log_dir, exist_ok=True)
         ts = int(time.time())
-        path = os.path.join(log_dir, f"telemetry_{ts}.jsonl")
-        self._f = open(path, "w")
-        _update_symlink(self.path, os.path.join(log_dir, "latest.jsonl"))                
+        self.path = os.path.join(log_dir, f"telemetry_{ts}.jsonl")  # set path first
+        self._f = open(self.path, "w")
+        _update_symlink(self.path, os.path.join(log_dir, "latest.jsonl"))
 
     def write(self, row: dict):
         row = dict(row)  # shallow copy

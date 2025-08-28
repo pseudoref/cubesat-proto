@@ -1,4 +1,5 @@
 # sat_sim/main.py
+import random
 import time
 import json
 import os
@@ -39,6 +40,19 @@ def main():
                 acc_xyz=s['acc'],
                 light=s['light']
             )
+            #debug: print the frame length and first bytes (only for first few seqs)
+            if seq < 10:
+                print(f"[SIM-DBG] seq={seq} frame_len={len(frame)} hex={frame[:20].hex()} ...")
+            # -- BEGIN optional corruption for testing --
+            corrupt_prob = float(cfg.get("debug_corrupt_prob", 0.0))
+            if corrupt_prob > 0.0 and random.random() < corrupt_prob:
+                # flip one byte (not the CRC bytes) to trigger CRC mismatch
+                fb = bytearray(frame)
+                if len(fb) > 8:
+                    fb[8] ^= 0xFF
+                    frame = bytes(fb)
+            # -- END optional corruption --
+
             sender.send(frame)
             print(f"Sent seq={seq} mode={mode} batt={s['batt_mv']} temp_c={s['temp_centideg']/100:.2f}")
             seq = (seq + 1) & 0xFFFF
@@ -48,4 +62,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
