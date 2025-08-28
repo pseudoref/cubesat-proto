@@ -5,6 +5,11 @@
   "battery_start_mv": 4200,
   "battery_drain_mv_per_sec": 0.05,
   "temp_base_c": 25.0,
-  "pressure_base_pa": 101325
+  "pressure_base_pa": 101325,
+  "ground_log_dir": "ground/logs",
+  "ground_log_csv": true,
+  "ground_log_jsonl": true,
+  "ground_status_interval_sec": 5,
+  "debug_corrupt_prob": 0.0
 }
 
