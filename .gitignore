@@ -1,23 +1,23 @@
-# Python cache
+# Byte-compiled / cache
 __pycache__/
-*.pyc
+*.py[cod]
 
 # Logs
 *.log
-*.out
+*.csv
+*.jsonl
+ground/logs/
 
-# Temporary/system files
-*.tmp
-.DS_Store
-
-# Virtual environment
+# Virtual environments
+.venv/
+env/
 venv/
-.env/
 
-# Build artifacts
-build/
-dist/
+# OS files
+.DS_Store
+Thumbs.db
 
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
+# VSCode / IDE
+.vscode/
+.idea/
 
