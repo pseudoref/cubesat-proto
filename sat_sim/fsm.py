@@ -7,23 +7,32 @@ class CubeSatFSM:
     CMD_RESET_SEQ = 2
     CMD_PING = 3
 
+    def __init__(self):
+        # Default starting mode + sequence counter
+        self.mode = self.MODE_SAFE
+        self.seq_counter = 0
+
     def apply_command(self, cmd_id: int, param: int = 0):
-    """
-    Handle received uplink commands. Return a tuple (ack_code, message).
-    ack_code: 0 = OK, 1 = UNKNOWN_CMD, 2 = BAD_PARAM
-    """
-    if cmd_id == self.CMD_SET_MODE:
-        if param in (self.MODE_OPERATIONAL, self.MODE_SAFE, self.MODE_IDLE):
-            self.mode = param
-            return 0, f"Mode set to {self.mode}"
-        return 2, "Invalid mode param"
-    elif cmd_id == self.CMD_RESET_SEQ:
-        # No seq state inside FSM — main sim can reset its seq if required.
-        return 0, "Reset seq not handled here"
-    elif cmd_id == self.CMD_PING:
-        return 0, "PONG"
-    else:
-        return 1, "Unknown command"
+        """
+        Handle received uplink commands. Return a tuple (ack_code, message).
+        ack_code: 0 = OK, 1 = UNKNOWN_CMD, 2 = BAD_PARAM
+        """
+        if cmd_id == self.CMD_SET_MODE:
+            if param in (self.MODE_OPERATIONAL, self.MODE_SAFE, self.MODE_IDLE):
+                self.mode = param
+                return 0, f"Mode set to {self.mode}"
+            return 2, f"Invalid mode param: {param}"
+
+        elif cmd_id == self.CMD_RESET_SEQ:
+            self.seq_counter = 0
+            return 0, "Sequence counter reset"
+
+        elif cmd_id == self.CMD_PING:
+            return 0, "PONG"
+
+        else:
+            return 1, f"Unknown command {cmd_id}"
+
 
     def __init__(self, temp_high_centi=4000, batt_low_mv=3300):
         self.mode = self.MODE_OPERATIONAL

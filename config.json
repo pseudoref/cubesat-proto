@@ -1,6 +1,8 @@
 {
   "udp_host": "127.0.0.1",
   "udp_port": 5005,
+  "uplink_host": "127.0.0.1",
+  "uplink_port": 5006,
   "telemetry_rate_ms": 500,
   "battery_start_mv": 4200,
   "battery_drain_mv_per_sec": 0.05,
