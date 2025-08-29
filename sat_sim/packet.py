@@ -11,6 +11,34 @@ from typing import Tuple
 PREAMBLE = b'\xAA\x55'
 VERSION = 0x01
 MSGTYPE_TM = 0x01  # telemetry
+MSGTYPE_CMD = 0x02  # uplink command
+
+# ---------------------------------------------------
+def pack_command(cmd_id: int, param: int = 0, seq: int = 0) -> bytes:
+    """
+    Small command frame (no big payload).
+    Fields:
+      PREAMBLE (2B)
+      VERSION  (1B)
+      MSGTYPE  (1B) = MSGTYPE_CMD
+      SEQ      (2B) - optional sequence for traceability
+      CMD_ID   (1B)
+      PARAM    (4B) - signed int param
+      CRC16    (2B)
+    """
+    import struct
+    frame = bytearray()
+    frame.extend(PREAMBLE)
+    frame.extend(struct.pack('<B', VERSION))
+    frame.extend(struct.pack('<B', MSGTYPE_CMD))
+    frame.extend(struct.pack('<H', seq & 0xFFFF))
+    frame.extend(struct.pack('<B', cmd_id & 0xFF))
+    frame.extend(struct.pack('<i', int(param) & 0xFFFFFFFF))
+    # CRC over bytes after preamble
+    crc = crc16_x25(bytes(frame[2:]))
+    frame.extend(struct.pack('<H', crc & 0xFFFF))
+    return bytes(frame)
+
 
 # ---------------- CRC-16/X25 (LSB-first, reflected poly 0x1021 -> use 0x8408)
 def crc16_x25(data: bytes) -> int:
