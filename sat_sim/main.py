@@ -5,7 +5,7 @@ import json
 import os
 import threading
 from .sensors import SensorSimulator
-from .packet import pack_telemetry, pack_command, unpack_frame, MSGTYPE_CMD
+from .packet import pack_telemetry, pack_command, unpack_frame, MSGTYPE_CMD, unpack_command
 from .link import UDPSender
 from .fsm import CubeSatFSM
 from .command_listener import CommandListener
@@ -24,6 +24,18 @@ def main():
 
     # uplink listener callback
     def on_command(datagram, addr):
+        MIN_CMD_FRAME_SIZE = 10
+        if len(datagram) < MIN_CMD_FRAME_SIZE:
+            print(f"[UPLINK] Ignored too-short frame ({len(datagram)} bytes)")
+            return
+
+        try:
+            cmd = unpack_command(datagram)
+        except Exception as e:
+            print("Received bad uplink frame:", e)
+            return
+        ack_code, msg = fsm.apply_command( cmd["cmd_id"], cmd["param"])
+        print(f"Uplink: id={cmd['cmd_id']} param={cmd['param']} -> ack={ack_code} msg='{msg}'")
         try:
             # reuse unpack_frame to examine header; unpack_frame may raise on CRC fail
             info = unpack_frame(datagram)

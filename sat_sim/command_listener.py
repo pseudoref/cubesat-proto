@@ -4,6 +4,8 @@ import threading
 import time
 from typing import Callable
 
+MIN_CMD_FRAME_SIZE = 10  # minimum valid command frame length in bytes
+
 class CommandListener:
     """
     Listens on UDP port for command frames (binary) and calls callback with (cmd_id, param, seq, raw_data).
@@ -32,13 +34,19 @@ class CommandListener:
                 data, addr = self._sock.recvfrom(1024)
             except Exception:
                 continue
+
+            if len(data) < MIN_CMD_FRAME_SIZE:
+                # ignore too-short frames
+                print(f"[CMD LISTENER] Ignored frame too short ({len(data)} bytes)")
+                continue
+
             try:
                 # Expect caller to parse bytes (we keep listener simple)
                 # The callback should handle parsing (using sat_sim.packet.unpack_frame)
                 self.callback(data, addr)
             except Exception:
                 # swallow callback errors but print to console
-                print("Command callback error")
+                print("[CMD LISTENER] Command callback error")
                 continue
 
     def stop(self):

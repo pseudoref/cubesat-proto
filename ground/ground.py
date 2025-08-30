@@ -3,7 +3,7 @@ import os, json, socket, time
 from typing import Optional
 from .decode import decode_datagram
 from .logger import CsvLogger, JsonlLogger
-from .stats import StatsTracker   # make sure this class exists in stats.py
+from .stats import StatsTracker
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), '..', 'config.json')
 
@@ -40,20 +40,20 @@ def run():
                 try:
                     row = decode_datagram(data)   # may raise ValueError
                 except Exception as e:
-                    print("[GROUND] Decode failed:", e)   # DEBUG INFO
+                    print("[GROUND] Decode failed:", e)   # debug info
                     stats.note_bad()
                 else:
                     stats.note_good(row["seq"])
-                    if csv: 
-                        csv.write(row)
-                    if jsonl: 
-                        jsonl.write(row)
+                    if csv: csv.write(row)
+                    if jsonl: jsonl.write(row)
 
+            # Print periodic status
             if time.time() - last_status >= status_iv:
                 snap = stats.snapshot()
                 print(f"[status] good={snap['total_good']} bad={snap['total_bad']} "
                       f"loss={snap['seq_loss']} ({snap['loss_pct']}%) rate≈{snap['rate_est_pps']} pps")
                 last_status = time.time()
+
     except KeyboardInterrupt:
         print("Ground station stopped.")
     finally:
