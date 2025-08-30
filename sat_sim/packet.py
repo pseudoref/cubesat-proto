@@ -11,34 +11,59 @@ from typing import Tuple
 PREAMBLE = b'\xAA\x55'
 VERSION = 0x01
 MSGTYPE_TM = 0x01  # telemetry
-MSGTYPE_CMD = 0x02  # uplink command
+MSGTYPE_CMD = 0x02  # uplink
 
-# ---------------------------------------------------
 def pack_command(cmd_id: int, param: int = 0, seq: int = 0) -> bytes:
     """
-    Small command frame (no big payload).
-    Fields:
-      PREAMBLE (2B)
-      VERSION  (1B)
-      MSGTYPE  (1B) = MSGTYPE_CMD
-      SEQ      (2B) - optional sequence for traceability
-      CMD_ID   (1B)
-      PARAM    (4B) - signed int param
-      CRC16    (2B)
+    Command frame:
+      PREAMBLE(2) + VERSION(1) + MSGTYPE(1)=0x02 + SEQ(2)
+      + CMD_ID(1) + PARAM(4, int32 little-endian) + CRC16(2)
+    CRC computed over everything AFTER preamble and BEFORE CRC.
     """
     import struct
     frame = bytearray()
-    frame.extend(PREAMBLE)
-    frame.extend(struct.pack('<B', VERSION))
-    frame.extend(struct.pack('<B', MSGTYPE_CMD))
-    frame.extend(struct.pack('<H', seq & 0xFFFF))
-    frame.extend(struct.pack('<B', cmd_id & 0xFF))
-    frame.extend(struct.pack('<i', int(param) & 0xFFFFFFFF))
-    # CRC over bytes after preamble
-    crc = crc16_x25(bytes(frame[2:]))
-    frame.extend(struct.pack('<H', crc & 0xFFFF))
+    frame.extend(PREAMBLE)                       # 2
+    frame.extend(struct.pack('<B', VERSION))     # 1
+    frame.extend(struct.pack('<B', MSGTYPE_CMD)) # 1
+    frame.extend(struct.pack('<H', seq & 0xFFFF))# 2
+    frame.extend(struct.pack('<B', cmd_id & 0xFF))   # 1
+    frame.extend(struct.pack('<i', int(param)))      # 4
+    crc = crc16_x25(bytes(frame[2:]))            # CRC over [VERSION..PARAM]
+    frame.extend(struct.pack('<H', crc & 0xFFFF)) # 2
     return bytes(frame)
 
+def unpack_command(data: bytes) -> dict:
+    """
+    Parse and validate a command frame. Raises ValueError on problems.
+    Returns: {version, msgtype, seq, cmd_id, param}
+    """
+    import struct
+    # minimal length: 2 + 1 + 1 + 2 + 1 + 4 + 2 = 13
+    if len(data) < 13:
+        raise ValueError("Command frame too short")
+    if data[0:len(PREAMBLE)] != PREAMBLE:
+        raise ValueError("Bad preamble")
+
+    version = data[2]
+    msgtype = data[3]
+    if msgtype != MSGTYPE_CMD:
+        raise ValueError("Not a command frame")
+
+    seq = struct.unpack_from('<H', data, 4)[0]
+    cmd_id = data[6]
+    param = struct.unpack_from('<i', data, 7)[0]
+    rx_crc = struct.unpack_from('<H', data, 11)[0]
+    calc_crc = crc16_x25(data[2:-2])
+    if (rx_crc & 0xFFFF) != (calc_crc & 0xFFFF):
+        raise ValueError("Bad command CRC")
+
+    return {
+        "version": int(version),
+        "msgtype": int(msgtype),
+        "seq": int(seq),
+        "cmd_id": int(cmd_id),
+        "param": int(param),
+    }
 
 # ---------------- CRC-16/X25 (LSB-first, reflected poly 0x1021 -> use 0x8408)
 def crc16_x25(data: bytes) -> int:
